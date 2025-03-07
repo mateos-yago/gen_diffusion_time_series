@@ -1,4 +1,5 @@
 import ddpm_ar1
+from time_series_generator import TimeSeriesGenerator
 
 
 def main():

@@ -13,6 +13,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
 import matplotlib.pyplot as plt
+from time_series_generator import TimeSeriesGenerator
 
 class TimeSeriesDDPM(nn.Module):
     """
@@ -120,28 +121,6 @@ class TimeSeriesDDPM(nn.Module):
 
             return sqrt_recip_alpha_t * (xt - beta_t / sqrt_one_minus_alpha_t * noise_pred) + noise
 
-    def train_model(self, data, num_epochs=5, batch_size=10, learning_rate=1e-3):
-
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        optimizer = optim.Adam(self.parameters(), lr=learning_rate)
-
-        dataset = TensorDataset(data)
-        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-
-        for epoch in range(num_epochs):
-            for x0_batch in dataloader:
-                x0 = x0_batch[0].to(device)
-                # sample random time step
-                t = torch.randint(0, self.T, (x0.shape[0],), device=device)
-                # add noise to the batch according to given time step.
-                xt, noise = self.q_sample(x0, t)
-
-                optimizer.zero_grad()
-                noise_pred = self.forward(xt, t)
-                loss = F.mse_loss(noise_pred, noise)
-                loss.backward()
-                optimizer.step()
-            print(f"Epoch {epoch+1}, Loss: {loss.item()}")
 
     def train_model(self, data, num_epochs=5, batch_size=10, learning_rate=1e-3, plot=False):
         """
@@ -228,15 +207,15 @@ class TimeSeriesDDPM(nn.Module):
         return x.cpu().numpy()
 
 #######################################################################
-# Generate AR(1) synthetic time series
-def generate_ar1_series(num_series=100, seq_length=100, phi=0.8, sigma=0.1):
-    series = []
-    for _ in range(num_series):
-        x = [np.random.randn()]
-        for t in range(1, seq_length):
-            x.append(phi * x[-1] + sigma * np.random.randn())
-        series.append(x)
-    return torch.tensor(series, dtype=torch.float32).unsqueeze(-1)  # Add input_dim=1
+# # Generate AR(1) synthetic time series
+# def generate_ar1_series(num_series=100, seq_length=100, phi=0.8, sigma=0.1):
+#     series = []
+#     for _ in range(num_series):
+#         x = [np.random.randn()]
+#         for t in range(1, seq_length):
+#             x.append(phi * x[-1] + sigma * np.random.randn())
+#         series.append(x)
+#     return torch.tensor(series, dtype=torch.float32).unsqueeze(-1)  # Add input_dim=1
 
 
 
@@ -248,10 +227,10 @@ def train_and_plot():
     model = TimeSeriesDDPM(input_dim=1, hidden_dim=32, T=1000)
     
     # Generate synthetic training data
-    data = generate_ar1_series()
+    data = TimeSeriesGenerator.generate_ar_series(100, 50, 1)
     
     # Train the model
-    model.train_model(data, num_epochs=5)
+    model.train_model(data, num_epochs=5, plot=False)
     
     # Sample generated series
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -275,9 +254,6 @@ def train_and_plot():
     
     plt.tight_layout()
     plt.show()
-
-# Call the function to train, generate, and plot
-train_and_plot()
 
 
 
