@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Feb 13 22:02:33 2025
-
-@author: xing
-"""
-    
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -205,56 +197,3 @@ class TimeSeriesDDPM(nn.Module):
         for t in reversed(range(self.T)):
             x = self.p_sample(x, torch.full((1,), t, device=device, dtype=torch.long))
         return x.cpu().numpy()
-
-#######################################################################
-# # Generate AR(1) synthetic time series
-# def generate_ar1_series(num_series=100, seq_length=100, phi=0.8, sigma=0.1):
-#     series = []
-#     for _ in range(num_series):
-#         x = [np.random.randn()]
-#         for t in range(1, seq_length):
-#             x.append(phi * x[-1] + sigma * np.random.randn())
-#         series.append(x)
-#     return torch.tensor(series, dtype=torch.float32).unsqueeze(-1)  # Add input_dim=1
-
-
-
-
-#######################################################################
-# Function to train the model and visualize results
-def train_and_plot():
-    # Initialize the model
-    model = TimeSeriesDDPM(input_dim=1, hidden_dim=32, T=1000)
-    
-    # Generate synthetic training data
-    data = TimeSeriesGenerator.generate_ar_series(100, 50, 1)
-    
-    # Train the model
-    model.train_model(data, num_epochs=5, plot=False)
-    
-    # Sample generated series
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
-    generated_series = model.sample(seq_length=data.shape[1], device=device)
-    
-    # Plotting the original and generated series
-    fig, ax = plt.subplots(1, 2, figsize=(14, 6))
-    
-    # Plot training data (first time series in the batch)
-    ax[0].plot(data[0].cpu().numpy(), label="Training Series")
-    ax[0].set_title("Training Time Series")
-    ax[0].set_xlabel("Time Steps")
-    ax[0].set_ylabel("Value")
-    
-    # Plot generated series
-    ax[1].plot(generated_series[0], label="Generated Series", color='r')
-    ax[1].set_title("Generated Time Series")
-    ax[1].set_xlabel("Time Steps")
-    ax[1].set_ylabel("Value")
-    
-    plt.tight_layout()
-    plt.show()
-
-
-
-
