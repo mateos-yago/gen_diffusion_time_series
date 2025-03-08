@@ -17,7 +17,7 @@ def train_and_plot():
     # Sample generated series
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
-    generated_series = model.sample(seq_length=data.shape[1], device=device)
+    generated_series = model.sample(seq_length=data.shape[1], device=device, num_samples=2)
     print(generated_series)
 
     # Plotting the original and generated series

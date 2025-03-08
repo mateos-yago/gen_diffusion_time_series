@@ -174,31 +174,34 @@ class TimeSeriesDDPM(nn.Module):
             alpha_bar_t = self.alphas_cumprod[t][:, None, None]
             sqrt_one_minus_alpha_bar_t = torch.sqrt(1 - alpha_bar_t)
 
-            if t > 0:
-                noise = torch.randn_like(xt)
-            else:
-                noise = 0
+            noise = torch.where(t.view(-1, 1, 1) > 0,
+                                torch.randn_like(xt),
+                                torch.zeros_like(xt))
 
             return sqrt_recip_alpha_t * (xt - beta_t / sqrt_one_minus_alpha_bar_t * noise_pred) + \
                 noise*torch.sqrt(beta_t)
 
 
-    def sample(self, seq_length, device):
+    def sample(self, seq_length, device, num_samples=1):
         """
         Generate a new time series by reversing the diffusion process.
 
         Args:
             seq_length (int): Length of the time series sequence to generate.
             device (torch.device): Device on which to perform computation (CPU or GPU).
+            num_samples (int): Number of series to generate (default is 1).
 
         Returns:
-            numpy.ndarray: The generated time series as a NumPy array with shape (1, seq_length, input_dim).
+            numpy.ndarray: The generated time series as a NumPy array with shape (num_samples, seq_length, input_dim).
 
         The method begins with a tensor of pure noise and iteratively applies the reverse diffusion
         (p_sample) for each timestep from T-1 to 0.
         """
         self.eval()
-        x = torch.randn((1, seq_length, 1), device=device)  # Start with noise
+        # Initialize with noise for num_samples samples
+        x = torch.randn((num_samples, seq_length, 1), device=device)
         for t in reversed(range(self.T)):
-            x = self.p_sample(x, torch.full((1,), t, device=device, dtype=torch.long))
+            # Create a tensor of time indices for all samples
+            t_tensor = torch.full((num_samples,), t, device=device, dtype=torch.long)
+            x = self.p_sample(x, t_tensor)
         return x.cpu().numpy()
