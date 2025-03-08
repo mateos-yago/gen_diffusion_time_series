@@ -85,34 +85,6 @@ class TimeSeriesDDPM(nn.Module):
         sqrt_one_minus_alpha_cumprod_t = torch.sqrt(1 - self.alphas_cumprod[t])[:, None, None]
         return sqrt_alpha_cumprod_t * x0 + sqrt_one_minus_alpha_cumprod_t * noise, noise
 
-    def p_sample(self, xt, t):
-        """
-        Sample from the reverse diffusion process (denoising step) at timestep t.
-
-        Args:
-            xt (torch.Tensor): The noisy time series tensor at timestep t.
-            t (int or torch.Tensor): The current timestep index. For a single sample, an integer is expected.
-
-        Returns:
-            torch.Tensor: The denoised tensor corresponding to the previous timestep.
-
-        The method uses the model's forward pass to predict the noise component and then applies the reverse
-        diffusion equation to generate a less noisy sample. A new noise term is added if t > 0.
-        """
-        with torch.no_grad():
-            noise_pred = self.forward(xt, t)
-            beta_t = self.betas[t][:, None, None]
-            alpha_t = self.alphas[t][:, None, None]
-            sqrt_recip_alpha_t = torch.sqrt(1.0 / alpha_t)
-            sqrt_one_minus_alpha_t = torch.sqrt(1 - alpha_t)
-
-            if t > 0:
-                noise = torch.randn_like(xt)
-            else:
-                noise = 0
-
-            return sqrt_recip_alpha_t * (xt - beta_t / sqrt_one_minus_alpha_t * noise_pred) + noise
-
 
     def train_model(self, data, num_epochs=5, batch_size=10, learning_rate=1e-3, plot=False):
         """
@@ -177,6 +149,39 @@ class TimeSeriesDDPM(nn.Module):
                 plt.ylabel("Noise Value")
                 plt.legend()
                 plt.show()
+
+
+    def p_sample(self, xt, t):
+        """
+        Sample from the reverse diffusion process (denoising step) at timestep t.
+
+        Args:
+            xt (torch.Tensor): The noisy time series tensor at timestep t.
+            t (int or torch.Tensor): The current timestep index. For a single sample, an integer is expected.
+
+        Returns:
+            torch.Tensor: The denoised tensor corresponding to the previous timestep.
+
+        The method uses the model's forward pass to predict the noise component and then applies the reverse
+        diffusion equation to generate a less noisy sample. A new noise term is added if t > 0.
+        """
+        with (torch.no_grad()):
+            noise_pred = self.forward(xt, t)
+            beta_t = self.betas[t][:, None, None]
+            alpha_t = self.alphas[t][:, None, None]
+            sqrt_recip_alpha_t = torch.sqrt(1.0 / alpha_t)
+            # Use cumulative product for the scaling:
+            alpha_bar_t = self.alphas_cumprod[t][:, None, None]
+            sqrt_one_minus_alpha_bar_t = torch.sqrt(1 - alpha_bar_t)
+
+            if t > 0:
+                noise = torch.randn_like(xt)
+            else:
+                noise = 0
+
+            return sqrt_recip_alpha_t * (xt - beta_t / sqrt_one_minus_alpha_bar_t * noise_pred) + \
+                noise*torch.sqrt(beta_t)
+
 
     def sample(self, seq_length, device):
         """

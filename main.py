@@ -9,15 +9,16 @@ def train_and_plot():
     model = TimeSeriesDDPM(input_dim=1, hidden_dim=32, T=1000)
 
     # Generate synthetic training data
-    data = TimeSeriesGenerator.generate_ar_series(100, 50, 1)
+    data = TimeSeriesGenerator.generate_ar_series(100, 100, 1)
 
     # Train the model
-    model.train_model(data, num_epochs=5, plot=False)
+    model.train_model(data, num_epochs=100, plot=False)
 
     # Sample generated series
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     generated_series = model.sample(seq_length=data.shape[1], device=device)
+    print(generated_series)
 
     # Plotting the original and generated series
     fig, ax = plt.subplots(1, 2, figsize=(14, 6))
