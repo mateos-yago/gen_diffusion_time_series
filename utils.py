@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+from statsmodels.tsa import ar_model
 
 def AR_1_phi_parameter_estimation(series):
     """This function takes an array of AR1 time series as an argument
