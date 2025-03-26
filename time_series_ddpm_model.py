@@ -20,13 +20,16 @@ class TimeSeriesDDPM(nn.Module):
         alphas_cumprod (torch.Tensor): Cumulative product of alphas over timesteps.
     """
 
-    def __init__(self, input_dim, hidden_dim, T=1000):
+    def __init__(self, input_dim, hidden_dim, use_conv=False, conv_channels=None, num_lstm_layers=1, T=1000):
         """
         Initialize the TimeSeriesDDPM model.
 
         Args:
             input_dim (int): Dimensionality of the input features.
             hidden_dim (int): Number of hidden units in the LSTM layer.
+            use_conv (bool): Whether to use nor not a convolutional 1D preprocessing layer
+            conv_channels(int): Number of output channels for the optional convolutional layer
+            num_lstm_layers(int): number of hidden lstm layers.
             T (int, optional): Total number of diffusion timesteps. Defaults to 1000.
 
         This constructor sets up:
@@ -35,7 +38,19 @@ class TimeSeriesDDPM(nn.Module):
             - The noise schedule parameters (betas, alphas, alphas_cumprod) used for the diffusion process.
         """
         super(TimeSeriesDDPM, self).__init__()
-        self.lstm = nn.LSTM(input_dim + 1, hidden_dim, batch_first=True)  # +1 for time embedding
+        self.use_conv = use_conv
+
+        if self.use_conv:
+            if conv_channels is None:
+                raise ValueError("conv_channels must be specified when use_conv is True")
+            # For conv1d: input shape (batch, channels, seq_length)
+            self.conv1 = nn.Conv1d(in_channels=input_dim, out_channels=conv_channels,
+                                   kernel_size=3, padding=1)
+            lstm_input_dim = conv_channels + 1  # plus one for time embedding
+        else:
+            lstm_input_dim = input_dim + 1  # original features plus time embedding
+
+        self.lstm = nn.LSTM(lstm_input_dim, hidden_dim, num_layers=num_lstm_layers, batch_first=True)
         self.fc = nn.Linear(hidden_dim, input_dim)
 
         # Noise schedule parameters
@@ -58,6 +73,14 @@ class TimeSeriesDDPM(nn.Module):
         The method expands the time tensor to match the sequence length, concatenates it to the input,
         processes the combined tensor with the LSTM, and then applies a fully-connected layer.
         """
+        if self.use_conv:
+            # Transpose to (batch, input_dim, seq_length) for conv1d
+            x = x.transpose(1, 2)
+            x = self.conv1(x)
+            # Transpose back to (batch, seq_length, conv_channels)
+            x = x.transpose(1, 2)
+
+        # a partir de aqui es el codigo original
         t = t[:, None, None].expand(-1, x.shape[1], 1)  # Expand t to match sequence shape
         x = torch.cat((x, t), dim=-1)  # Concatenate t to input
         x, _ = self.lstm(x)

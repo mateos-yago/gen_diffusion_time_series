@@ -6,7 +6,7 @@ import torch
 
 def train_and_plot():
     # Initialize the model
-    model = TimeSeriesDDPM(input_dim=1, hidden_dim=32, T=1000)
+    model = TimeSeriesDDPM(input_dim=1, use_conv=True, conv_channels=16, num_lstm_layers=2, hidden_dim=32, T=1000)
 
     # Generate synthetic training data
     data = TimeSeriesGenerator.generate_ar_series(100, 100, 1)
