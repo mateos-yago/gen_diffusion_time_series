@@ -1,7 +1,0 @@
-TimeSeriesDDPM(
-  (net): HybridCNNLSTMNet(
-    (conv): Conv1d(1, 16, kernel_size=(3,), stride=(1,), padding=(1,))
-    (lstm): LSTM(17, 32, num_layers=2, batch_first=True)
-    (fc): Linear(in_features=32, out_features=1, bias=True)
-  )
-)

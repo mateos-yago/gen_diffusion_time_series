@@ -1,1 +1,0 @@
-Training time: 0.0354129999759607, Generation time: 0.7042592000216246
