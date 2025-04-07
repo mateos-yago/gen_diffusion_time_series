@@ -8,7 +8,7 @@ import utils
 
 
 class Experiment:
-    def __init__(self, name: 'str', experiment_type: 'str', directory_path, training_data, network_architecture):
+    def __init__(self, name: 'str', experiment_type: 'str', directory_path, training_data, network_architecture, seed=1):
         self.simulated_data_ma_coefficient = None
         self.simulated_data_ar_coefficient = None
         self.simulated_data_kurtosis = None
@@ -69,7 +69,7 @@ class Experiment:
         torch.save(self.nn_weights, os.path.join(utils.ensure_directory(self.directory_path), self.name + '_model_weights.pth'))
 
         # 2. Export neural network architecture:
-        with open(os.path.join(utils.ensure_directory(self.directory_path), self.name + '_nn_architecture.csv'), "w") as file:
+        with open(os.path.join(utils.ensure_directory(self.directory_path), self.name + '_nn_architecture.txt'), "w") as file:
             print(self.ddpm_model, file=file)
 
         # 3. Export training data:
