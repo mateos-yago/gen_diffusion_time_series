@@ -1,31 +1,46 @@
-from statsmodels.tsa import ar_model
-from statsmodels.tsa.arima.model import ARIMA
-import scipy.stats as st
+import os
+from matplotlib import pyplot as plt
+from pathlib import Path
 
-def AR_1_phi_parameter_estimation(series):
-    """This function takes an array of AR(1) time series as an argument
-    and returns  a list of the phi1 estimated parameter for each series"""
-    params_list=[]
-    for serie in series:
-        tsmodel=ar_model.AutoReg(serie, 1, trend='n')
-        result=tsmodel.fit()
-        params_list.append(result.params[0])
-    return params_list
 
-def ARMA_11_phi_theta_parameters_estimation(series):
-    """This function takes an array of ARMA(1,1) time series as an argument
-        and returns  a list of the phi and theta estimated parameter for each series"""
-    phi_list=[]
-    theta_list=[]
-    for serie in series:
-        tsmodel=ARIMA(serie, order=(1, 0, 1), trend="n")
-        result=tsmodel.fit()
-        phi_list.append(result.params[0])
-        theta_list.append(result.params[1])
-    return phi_list, theta_list
+def build_path(*folders, file_name=None):
+    """
+    Returns the current directory appended with any additional folder names provided,
+    and optionally appends a file name at the end.
 
-def ts_kurtosis_estimation(series):
-    kurtosis_list=[]
-    for serie in series:
-        kurtosis_list.append(st.kurtosis(serie))
-    return kurtosis_list
+    Parameters:
+    *folders (str): A variable number of folder names to append to the current directory.
+    file_name (str, optional): The file name to append to the path.
+
+    Returns:
+    str: The resulting full path.
+    """
+    # Start with the current directory and add any additional folders
+    path = os.path.join(os.getcwd(), *folders)
+    # If a file name is provided, append it to the path
+    if file_name:
+        path = os.path.join(path, file_name)
+    return path
+
+
+def comparison_histograms(data1, data2, bins, label1, label2, title, show=False, export=False, path=None):
+    plt.clf()
+    plt.hist(data1, bins=bins, alpha=0.5, label=label1)
+    plt.hist(data2, bins=bins, alpha=0.5, label=label2)
+
+    plt.legend(loc='upper right')
+    plt.title(title)
+    plt.xlabel("Value")
+    plt.ylabel("Frequency")
+    if show:
+        plt.show()
+    elif export:
+        plt.savefig(build_path(path))
+
+
+def ensure_directory(path_str):
+    path = Path(path_str)
+    if not path.exists():
+        path.mkdir(parents=True, exist_ok=True)
+        print(f"Directory created: {path}")
+    return str(path)

@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
 import matplotlib.pyplot as plt
 
+
 class TimeSeriesDDPM(nn.Module):
     """
     A Diffusion Denoising Probabilistic Model (DDPM) for time series data that uses an LSTM-based architecture.
@@ -63,7 +64,6 @@ class TimeSeriesDDPM(nn.Module):
         sqrt_one_minus_alpha_cumprod_t = torch.sqrt(1 - self.alphas_cumprod[t])[:, None, None]
         return sqrt_alpha_cumprod_t * x0 + sqrt_one_minus_alpha_cumprod_t * noise, noise
 
-
     def train_model(self, data, num_epochs=5, batch_size=10, learning_rate=1e-3, plot=False):
         """
         Train the TimeSeriesDDPM model using provided time series data.
@@ -111,23 +111,21 @@ class TimeSeriesDDPM(nn.Module):
                 last_noise = noise[0]
                 last_noise_pred = noise_pred[0]
             epoch_loss /= len(dataset)
-            print(f"Epoch {epoch+1}, Loss: {epoch_loss}")
+            print(f"Epoch {epoch + 1}, Loss: {epoch_loss}")
 
             if plot:
-
                 # Plot predicted noise vs. actual noise for the first sample of the last batch
-                noise_np = last_noise.detach().cpu().numpy().squeeze()      # shape: [sequence_length]
+                noise_np = last_noise.detach().cpu().numpy().squeeze()  # shape: [sequence_length]
                 noise_pred_np = last_noise_pred.detach().cpu().numpy().squeeze()  # shape: [sequence_length]
 
                 plt.figure()
                 plt.plot(noise_np, label="Actual Noise")
                 plt.plot(noise_pred_np, label="Predicted Noise", linestyle="--")
-                plt.title(f"Epoch {epoch+1}: Predicted vs. Actual Noise")
+                plt.title(f"Epoch {epoch + 1}: Predicted vs. Actual Noise")
                 plt.xlabel("Time Steps")
                 plt.ylabel("Noise Value")
                 plt.legend()
                 plt.show()
-
 
     def p_sample(self, xt, t):
         """
@@ -157,8 +155,7 @@ class TimeSeriesDDPM(nn.Module):
                                 torch.zeros_like(xt))
 
             return sqrt_recip_alpha_t * (xt - beta_t / sqrt_one_minus_alpha_bar_t * noise_pred) + \
-                noise*torch.sqrt(beta_t)
-
+                noise * torch.sqrt(beta_t)
 
     def sample(self, seq_length, device, num_samples=1):
         """
